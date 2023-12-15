@@ -1,0 +1,105 @@
+---
+title: "NYCTaxi"
+author: "이정재(202021333)"
+format: dashboard
+execute: 
+  enabled: true
+  cache: false
+  freeze: false
+---
+
+```{python}
+#| output: false
+# 여기에 온갖코드를 넣음.
+# 1-(1),(2),(3) 에 대응하는 plotly figure를 아래와 같은 이름으로 저장
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.io as pio
+
+pd.options.plotting.backend = "plotly"
+pio.templates.default = "plotly_white"
+
+df = pd.read_csv("https://raw.githubusercontent.com/guebin/DV2023/main/posts/NYCTaxi.csv")
+df.columns
+
+df_feature = df.assign(
+    log_trip_duration = np.log(df.trip_duration),
+    pickup_datetime = df.pickup_datetime.apply(pd.to_datetime),
+    dropoff_datetime = df.dropoff_datetime.apply(pd.to_datetime),
+    dist = np.sqrt((df.pickup_latitude-df.dropoff_latitude)**2 + (df.pickup_longitude-df.dropoff_longitude)**2),
+    #---#
+    vendor_id = df.vendor_id.map({1:'A',2:'B'})
+).assign(
+    pickup_hour = lambda df: df.pickup_datetime.dt.hour,
+    dropoff_hour = lambda df: df.dropoff_datetime.dt.hour,
+    dayofweek = lambda df: df.pickup_datetime.dt.dayofweek,
+    speed = lambda df: df.dist/df.trip_duration,
+)
+
+fig1 = px.scatter_mapbox(
+    data_frame = df_feature,
+    lat = 'pickup_latitude',
+    lon = 'pickup_longitude',
+    center = {'lat':40.7322, 'lon':-73.9052},
+    #---#
+    mapbox_style = 'carto-positron',
+    zoom=10,
+    width=750,
+    height=600
+)
+fig1.update_traces(
+    marker = {
+        'size':2, 
+    }
+)
+
+
+fig2 = px.density_mapbox(
+    data_frame = df_feature,
+    lat = 'pickup_latitude',
+    lon = 'pickup_longitude',
+    radius=1,
+    center = {'lat':40.7322, 'lon':-73.9052},
+    #---#
+    mapbox_style = 'carto-positron',
+    zoom=10,
+    width=750,
+    height=600
+)
+
+
+fig3 = px.density_mapbox(
+    data_frame = df_feature,
+    lat = 'pickup_latitude',
+    lon = 'pickup_longitude',
+    radius=1.5,
+    center = {'lat':40.7322, 'lon':-73.9052},
+    z = 'passenger_count',
+    #---#
+    mapbox_style = 'carto-positron',
+    zoom=10,
+    width=750,
+    height=600
+)
+
+```
+
+# 기말고사1-(1),(2)
+
+```{python}
+#| title: 요일,시간에 따른 평균속력 시각화        
+fig1.show(config={'scrollZoom':False})
+```
+
+```{python}
+#| title: 요일,시간에 따른 평균이동거리 시각화        
+fig2.show(config={'scrollZoom':False})
+```
+
+# 기말고사1-(3)
+
+```{python}
+#| title: 속력별 경로 시각화
+fig3.show(config={'scrollZoom':False})
+```
